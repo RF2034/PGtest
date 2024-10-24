@@ -8,9 +8,19 @@ from wordQuiz.main import (
 )
 
 class TestWordQuiz(unittest.TestCase):
+    """
+    ハングマンゲームの各関数をテストするためのユニットテストクラス。
+    """
 
     @patch('builtins.print')
     def test_display_game_state(self, mock_print):
+        """
+        display_game_state関数のテスト。
+        ゲームの状態が正しく表示されるかを確認します。
+
+        Args:
+            mock_print (Mock): print関数をモックするためのパッチオブジェクト
+        """
         display_word = ["_", "_", "_", "_", "_"]
         remaining_attempts = 5
         display_game_state(display_word, remaining_attempts)
@@ -18,6 +28,10 @@ class TestWordQuiz(unittest.TestCase):
         mock_print.assert_any_call(f"残り失敗可能数: {remaining_attempts}")
 
     def test_validate_input(self):
+        """
+        validate_input関数のテスト。
+        プレイヤーの入力が正しく検証されるかを確認します。
+        """
         guessed_letters = set('a')
         self.assertEqual(validate_input('a', guessed_letters), (False, "その文字は既に入力されています。"))
         self.assertEqual(validate_input('1', guessed_letters), (False, "アルファベットの1文字を入力してください。"))
@@ -26,6 +40,14 @@ class TestWordQuiz(unittest.TestCase):
     @patch('builtins.input', side_effect=cycle(['a', 'a', 'b', 'c', 'd', 'e']))
     @patch('builtins.print')
     def test_game_loop(self, mock_print, mock_input):
+        """
+        ゲームのメインループのテスト。
+        ゲームが正しく進行し、終了するかを確認します。
+
+        Args:
+            mock_print (Mock): print関数をモックするためのパッチオブジェクト
+            mock_input (Mock): input関数をモックするためのパッチオブジェクト
+        """
         hidden_word = "mango"
         display_word, remaining_attempts, guessed_letters = initialize_game_state(hidden_word)
 
