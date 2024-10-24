@@ -81,7 +81,7 @@ def update_game_state(guess, hidden_word, display_word, remaining_attempts, gues
 
 def main():
     """
-    ハングマンゲームのメインループを実行します。
+    単語当てゲームのメインループを実行します。
     """
     hidden_word = choose_word(words)
     display_word, remaining_attempts, guessed_letters = initialize_game_state(hidden_word)

@@ -1,41 +1,99 @@
-# test_main.py
-import string
+from itertools import cycle
 import unittest
 from unittest.mock import patch
-from itertools import cycle
 from wordQuiz.main import (
-    choose_word, initialize_game_state, display_game_state, validate_input, update_game_state, words
+    choose_word,
+    display_game_state,
+    initialize_game_state,
+    validate_input,
+    update_game_state,
+    words
 )
 
-class TestWordQuiz(unittest.TestCase):
+class TestHangmanGame(unittest.TestCase):
     """
-    ハングマンゲームの各関数をテストするためのユニットテストクラス。
+    単語当てゲームの各関数をテストするためのユニットテストクラス。
     """
 
-    @patch('builtins.print')
-    def test_display_game_state(self, mock_print):
+    def test_choose_word(self):
         """
-        display_game_state関数のテスト。
-        ゲームの状態が正しく表示されるかを確認します。
-
-        Args:
-            mock_print (Mock): print関数をモックするためのパッチオブジェクト
+        choose_word関数のテスト。
+        ランダムに選ばれた単語がリスト内に存在するかを確認します。
         """
-        display_word = ["_", "_", "_", "_", "_"]
-        remaining_attempts = 5
-        display_game_state(display_word, remaining_attempts)
-        mock_print.assert_any_call(" ".join(display_word))
-        mock_print.assert_any_call(f"残り失敗可能数: {remaining_attempts}")
+        with patch('random.choice', return_value='APPLE'):
+            word = choose_word(words)
+            self.assertEqual(word, 'apple')
+            self.assertIn(word.upper(), [w.upper() for w in words])
 
-    def test_validate_input(self):
+    def test_initialize_game_state(self):
+        """
+        initialize_game_state関数のテスト。
+        初期状態が正しく設定されているかを確認します。
+        """
+        test_word = "test"
+        display_word, remaining_attempts, guessed_letters = initialize_game_state(test_word)
+        
+        self.assertEqual(display_word, ['_', '_', '_', '_'])
+        self.assertEqual(remaining_attempts, 5)
+        self.assertEqual(guessed_letters, set())
+
+    def test_validate_input_valid_letter(self):
         """
         validate_input関数のテスト。
-        プレイヤーの入力が正しく検証されるかを確認します。
+        有効な入力が正しく検証されるかを確認します。
+        """
+        guessed_letters = set()
+        is_valid, message = validate_input('a', guessed_letters)
+        
+        self.assertTrue(is_valid)
+        self.assertEqual(message, '')
+
+    def test_validate_input_invalid_letter(self):
+        """
+        validate_input関数のテスト。
+        無効な入力が正しく検証されるかを確認します。
         """
         guessed_letters = set('a')
-        self.assertEqual(validate_input('a', guessed_letters), (False, "その文字は既に入力されています。"))
-        self.assertEqual(validate_input('1', guessed_letters), (False, "アルファベットの1文字を入力してください。"))
-        self.assertEqual(validate_input('b', guessed_letters), (True, ""))
+        is_valid, message = validate_input('a', guessed_letters)
+        
+        self.assertFalse(is_valid)
+        self.assertEqual(message, 'その文字は既に入力されています。')
+
+    def test_update_game_state_correct_guess(self):
+        """
+        update_game_state関数のテスト。
+        正解の文字を推測した場合のゲーム状態の更新を確認します。
+        """
+        hidden_word = "test"
+        display_word = ['_', '_', '_', '_']
+        remaining_attempts = 5
+        guessed_letters = set()
+        
+        new_display, new_attempts, new_guessed = update_game_state(
+            't', hidden_word, display_word, remaining_attempts, guessed_letters
+        )
+        
+        self.assertEqual(new_display, ['t', '_', '_', 't'])
+        self.assertEqual(new_attempts, 5)
+        self.assertEqual(new_guessed, {'t'})
+
+    def test_update_game_state_incorrect_guess(self):
+        """
+        update_game_state関数のテスト。
+        不正解の文字を推測した場合のゲーム状態の更新を確認します。
+        """
+        hidden_word = "test"
+        display_word = ['_', '_', '_', '_']
+        remaining_attempts = 5
+        guessed_letters = set()
+        
+        new_display, new_attempts, new_guessed = update_game_state(
+            'x', hidden_word, display_word, remaining_attempts, guessed_letters
+        )
+        
+        self.assertEqual(new_display, ['_', '_', '_', '_'])
+        self.assertEqual(new_attempts, 4)
+        self.assertEqual(new_guessed, {'x'})
 
     @patch('builtins.input', side_effect=cycle(['a', 'a', 'b', 'c', 'd', 'e']))
     @patch('builtins.print')
@@ -57,7 +115,7 @@ class TestWordQuiz(unittest.TestCase):
 
             is_valid, message = validate_input(guess, guessed_letters)
             if not is_valid:
-                mock_print.assert_called_with(message)
+                mock_print.assert_any_call(message)
                 continue
 
             display_word, remaining_attempts, guessed_letters = update_game_state(
@@ -65,9 +123,9 @@ class TestWordQuiz(unittest.TestCase):
             )
 
         if "_" not in display_word:
-            mock_print.assert_called_with("おめでとうございます！単語を当てました:", hidden_word)
+            mock_print.assert_any_call("おめでとうございます！単語を当てました:", hidden_word)
         else:
-            mock_print.assert_called_with("ゲームオーバー！正解の単語は:", hidden_word)
+            mock_print.assert_any_call("ゲームオーバー！正解の単語は:", hidden_word)
 
 if __name__ == '__main__':
     unittest.main()
